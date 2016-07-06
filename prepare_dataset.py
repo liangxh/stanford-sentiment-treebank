@@ -1,14 +1,23 @@
+#! /usr/bin/env python
 # -*- coding: utf-8 -*-
+'''
+Author: Xihao Liang
+Created: 2016.07.06
+Description: run this script to prepare dataset for binary classification and fine-grained classification over Stanford Sentiment Treebank
+'''
 
 import sys
 reload(sys)
 sys.setdefaultencoding('utf8')
 
 import cPickle
-dir_root = 'data/corpus/'
+dir_corpus = 'data/corpus/'
+fname_valence = 'data/dataset/valence.pkl'
+fname_binary = 'data/dataset/binary.pkl'
+fname_finegrain = 'data/dataset/finegrain.pkl'
 
 def read_text():
-	ifname = dir_root + 'stanfordSentimentTreebank/SOStr.txt'
+	ifname = dir_corpus + 'stanfordSentimentTreebank/SOStr.txt'
 	lines = open(ifname, 'r').read().split('\n')
 
 	texts = []
@@ -21,7 +30,7 @@ def read_text():
 	return texts
 
 def read_splitlabel():
-	ifname = dir_root + 'stanfordSentimentTreebank/datasetSplit.txt'
+	ifname = dir_corpus + 'stanfordSentimentTreebank/datasetSplit.txt'
 	lines = open(ifname, 'r').read().split('\n')
 
 	splitlabels = []
@@ -33,7 +42,7 @@ def read_splitlabel():
 	return splitlabels
 
 def read_sentiscore():
-	ifname = dir_root + 'stanfordSentimentTreebank/sentiment_labels.txt'
+	ifname = dir_corpus + 'stanfordSentimentTreebank/sentiment_labels.txt'
 	lines = open(ifname, 'r').read().split('\n')
 
 	sentiscores = []
@@ -45,7 +54,7 @@ def read_sentiscore():
 	return sentiscores
 
 def read_phraseid():
-	ifname = dir_root + 'stanfordSentimentTreebank/dictionary.txt'
+	ifname = dir_corpus + 'stanfordSentimentTreebank/dictionary.txt'
 	lines = open(ifname, 'r').read().split('\n')
 
 	phraseid = {}
@@ -56,7 +65,7 @@ def read_phraseid():
 
 	return phraseid
 
-def prepare():
+def prepare_valence():
 	texts = read_text()
 	splitlabels = read_splitlabel()
 	sentiscores = read_sentiscore()
@@ -92,10 +101,10 @@ def prepare():
 		list_label.append(sentiscores[phraseid[texts[i]]])
 
 	dataset = ((train_text, train_label), (valid_text, valid_label), (test_text, test_label))
-	cPickle.dump(dataset, open('data/raw.pkl', 'w'))
+	cPickle.dump(dataset, open(fname_valence, 'w'))
 
 def prepare_finegrain():
-	dataset = cPickle.load(open('data/raw.pkl', 'r'))
+	dataset = cPickle.load(open(fname_valence, 'r'))
 	
 	def labelize(x_label):
 		x, label = x_label
@@ -116,10 +125,10 @@ def prepare_finegrain():
 		return (x, y)
 
 	train, valid, test = dataset
-	cPickle.dump((labelize(train), labelize(valid), labelize(test)), open('data/finegrain.pkl', 'w'))
+	cPickle.dump((labelize(train), labelize(valid), labelize(test)), open(data/finegrain.pkl, 'w'))
 
 def prepare_binary():
-	dataset = cPickle.load(open('data/raw.pkl', 'r'))
+	dataset = cPickle.load(open(fname_valence, 'r'))
 	
 	def labelize(x_label):
 		x, label = x_label
@@ -134,10 +143,10 @@ def prepare_binary():
 		return (x, y)
 
 	train, valid, test = dataset
-	cPickle.dump((labelize(train), labelize(valid), labelize(test)), open('data/binary.pkl', 'w'))
+	cPickle.dump((labelize(train), labelize(valid), labelize(test)), open(fname_binary, 'w'))
 
 def main():
-	prepare()
+	prepare_valence()
 	prepare_finegrain()
 	prepare_binary()
 
