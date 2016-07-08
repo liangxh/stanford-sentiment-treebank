@@ -14,7 +14,7 @@ import cPickle
 from optparse import OptionParser
 
 def dump_wemb(fname_vocab, fname_wemb, fname_output):
-	vocabs = open(fname_vocab, 'r').decode('utf8').read().split('\n')
+	vocabs = open(fname_vocab, 'r').read().decode('utf8').split('\n')
 	vocabs = set(vocabs)
 	n_vocab = len(vocabs)
 	count = 0
