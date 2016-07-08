@@ -47,7 +47,7 @@ class WordEmbedder:
 
 		dim = len(Wemb[0])
 
-		return WordEmedder(Widx, Wemb, dim)
+		return WordEmbedder(Widx, Wemb, dim)
 
 def test():
 	fname_embed = 'data/wemb/binary.glove.6B.50d.txt'
