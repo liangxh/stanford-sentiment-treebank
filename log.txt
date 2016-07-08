@@ -1,1 +1,7 @@
 # 2016.07.08
+
+* 生成字典列表 
+	for key in binary finegrain; do python prepare_vocab.py -d data/dataset/$key.pkl -v data/vocab/$key.txt; done
+
+* 生成詞向量列表
+	for key in binary finegrain; do for f in $(../GloVe/); do python prepare_wemb.py -v data/vocab/$key.txt -w ../GloVe/$f -o data/wemb/$key.$f; done; done

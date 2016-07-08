@@ -40,7 +40,7 @@ def main():
 	optparser.add_option('-o', '--output', action='store', dest='fname_output')
 	opts, args = optparser.parse_args()
 
-	dump_wemb(fname_vocab, fname_wemb, fname_output)	
+	dump_wemb(opts.fname_vocab, opts.fname_wemb, opts.fname_output)
 
 if __name__ == '__main__':
 	main()
