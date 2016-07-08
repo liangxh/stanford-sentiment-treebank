@@ -51,7 +51,7 @@ class WordEmbedder:
 
 def test():
 	fname_embed = 'data/wemb/binary.glove.6B.50d.txt'
-	wembedder = WordEmbedder.load()
+	wembedder = WordEmbedder.load(fname_embed)
 
 	sample = 'hello how are you ?'.split(' ')
 	print >> sys.stderr, wembedder.seq2idx(sample)
