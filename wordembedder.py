@@ -14,7 +14,7 @@ import numpy as np
 import theano
 
 class WordEmbedder:
-	def __main__(self, Widx, Wemb, dim):
+	def __init__(self, Widx, Wemb, dim):
 		self.Widx = Widx
 		self.Wemb = Wemb
 		self.dim = dim
