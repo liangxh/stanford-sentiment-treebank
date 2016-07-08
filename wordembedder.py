@@ -20,7 +20,7 @@ class WordEmbedder:
 		self.dim = dim
 
 	def get_Wemb(self):
-		return np.asarray(Wemb).astype(theano.config.floatX)
+		return np.asarray(self.Wemb).astype(theano.config.floatX)
 
 	def seq2idx(self, seq):
 		return [self.Widx[t] for t in seq if self.Widx.has_key(t)]
