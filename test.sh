@@ -1,1 +1,2 @@
-python lstm.py -p binlstmtwi25 -i binary -e binary.glove.twitter.27B.25d
+alg=$1
+python $1.py -p bin$1twi25 -i binary -e binary.glove.twitter.27B.25d

@@ -102,7 +102,8 @@ class Classifier:
 			for k, v in new_params:
 				params[k] = v
 		
-		add_params(nnfactory.lstm.init_param('lstm', options['dim_wemb'], options['dim_hidden']))
+		add_params(nnfactory.lstm.init_param('lstm1', options['dim_wemb'], options['dim_hidden']))
+		add_params(nnfactory.lstm.init_param('lstm2', options['dim_hidden'], options['dim_hidden']))
 		add_params(nnfactory.softmax.init_param('softmax', options['dim_hidden'], options['ydim']))
 
 		return params
@@ -130,7 +131,9 @@ class Classifier:
 			)
 
 		# the result of LSTM, a matrix of shape (n_timestep, n_samples, dim_hidden)
-		proj = nnfactory.lstm.build_layer(tparams, 'lstm', emb, mask)
+		proj = nnfactory.lstm.build_layer(tparams, 'lstm1', emb, mask)
+		proj = nnfactory.lstm.build_layer(tparams, 'lstm2', proj, mask)
+
 		proj = nnfactory.lstm.postprocess_last(proj)
 
 		proj = nnfactory.dropout.build_layer(proj, flag_dropout)
