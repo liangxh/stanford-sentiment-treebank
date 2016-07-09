@@ -1,3 +1,4 @@
+import rnn
 import lstm
 import gru
 import dropout

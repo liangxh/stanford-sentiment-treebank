@@ -112,25 +112,3 @@ def build_layer(
 	# hidden state output, memory states
 	return rval[0]
 
-def postprocess_avg(proj, mask):
-	"""
-	mean pooling
-	
-	proj: a matrix of size [n_step, n_samples, dim_proj]
-	mask: a matrix of size [n_step, n_samples]
-	"""
-
-	proj = (proj * mask[:, :, None]).sum(axis=0)
-	proj = proj / mask.sum(axis=0)[:, None]
-
-	return proj
-
-def postprocess_last(proj):
-	"""
-	keep only the last hidden state
-	
-	proj: a matrix of size [n_step, n_samples, dim_proj]
-	"""
-
-	return proj[-1]
-

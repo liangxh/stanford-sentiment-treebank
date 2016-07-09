@@ -131,7 +131,7 @@ class Classifier:
 
 		# the result of LSTM, a matrix of shape (n_timestep, n_samples, dim_hidden)
 		proj = nnfactory.lstm.build_layer(tparams, 'lstm', emb, mask)
-		proj = nnfactory.lstm.postprocess_last(proj)
+		proj = nnfactory.rnn.postprocess_last(proj)
 
 		proj = nnfactory.dropout.build_layer(proj, flag_dropout)
 

@@ -2,7 +2,8 @@
 # -*- coding: utf-8 -*-
 '''
 Author: Xihao Liang
-Created: 2016.07.09
+Created: 2016.05.19
+Description: Interface for Lstm-LR, only the last vector of LSTM remained
 '''
 
 import os
@@ -18,7 +19,7 @@ import numpy as np
 import theano
 import theano.tensor as T
 floatX = theano.config.floatX
-#theano.config.exception_verbosity = 'high'
+theano.config.exception_verbosity = 'high'
 from theano.sandbox.rng_mrg import MRG_RandomStreams as RandomStreams
 
 # Set the random number generators' seeds for consistency
@@ -102,8 +103,7 @@ class Classifier:
 			for k, v in new_params:
 				params[k] = v
 		
-		add_params(nnfactory.lstm.init_param('lstm1', options['dim_wemb'], options['dim_hidden']))
-		add_params(nnfactory.lstm.init_param('lstm2', options['dim_hidden'], options['dim_hidden']))
+		add_params(nnfactory.rnn.init_param('rnn', options['dim_wemb'], options['dim_hidden']))
 		add_params(nnfactory.softmax.init_param('softmax', options['dim_hidden'], options['ydim']))
 
 		return params
@@ -130,10 +130,7 @@ class Classifier:
 				[n_timesteps, n_samples, options['dim_wemb']]
 			)
 
-		# the result of LSTM, a matrix of shape (n_timestep, n_samples, dim_hidden)
-		proj = nnfactory.lstm.build_layer(tparams, 'lstm1', emb, mask)
-		proj = nnfactory.lstm.build_layer(tparams, 'lstm2', proj, mask)
-
+		proj = nnfactory.rnn.build_layer(tparams, 'rnn', emb, mask)
 		proj = nnfactory.rnn.postprocess_last(proj)
 
 		proj = nnfactory.dropout.build_layer(proj, flag_dropout)

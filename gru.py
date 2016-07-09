@@ -131,7 +131,7 @@ class Classifier:
 			)
 
 		proj = nnfactory.gru.build_layer(tparams, 'gru', emb, mask)
-		proj = nnfactory.gru.postprocess_last(proj)
+		proj = nnfactory.rnn.postprocess_last(proj)
 
 		proj = nnfactory.dropout.build_layer(proj, flag_dropout)
 
