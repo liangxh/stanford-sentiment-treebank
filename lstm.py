@@ -19,6 +19,7 @@ import numpy as np
 import theano
 import theano.tensor as T
 floatX = theano.config.floatX
+#theano.config.exception_verbosity = 'high'
 from theano.sandbox.rng_mrg import MRG_RandomStreams as RandomStreams
 
 # Set the random number generators' seeds for consistency
@@ -83,26 +84,9 @@ def init_tparams(params):
 		tparams[kk] = theano.shared(params[kk], name=kk)
 	return tparams
 
-def ortho_weight(ndim):
-	'''
-	initialization of a matrix [ndim x ndim]
-	'''
-	W = np.random.randn(ndim, ndim)
-	u, s, v = np.linalg.svd(W)
-	return u.astype(floatX)
 
-def dropout_layer(state_before, use_noise, trng):
-	'''
-	return a dropout layer
-	$state_before refers to x, rename it later maybe
-	'''
-	proj = T.switch(
-			use_noise,
-			(state_before
-				* trng.binomial(state_before.shape, p = 0.5, n = 1, dtype = state_before.dtype)),
-			state_before * 0.5
-		)
-	return proj
+
+import nnfactory
 
 class LstmClassifier:
 	def __init__(self):
@@ -115,126 +99,65 @@ class LstmClassifier:
 		'''
 		params = OrderedDict()
 
-		# Embedding and LSTM
-	   	params['Wemb'] = Wemb
-		params = self.init_params_lstm(options, params, prefix = 'lstm')
+		params['Wemb'] = Wemb
+
+		def add_params(new_params):
+			for k, v in new_params:
+				params[k] = v
 		
-		# logistic Regression
-		params['U'] = 0.01 * np.random.randn(options['dim_proj'], options['ydim']).astype(floatX)
-		params['b'] = np.zeros((options['ydim'],)).astype(floatX)
+		add_params(nnfactory.lstm.init_param('lstm', options['dim_wemb'], options['dim_hidden']))
+		add_params(nnfactory.softmax.init_param('softmax', options['dim_hidden'], options['ydim']))
 
 		return params
-
-	def init_params_lstm(self, options, params, prefix='lstm'):
-		N = 4 # input/output/cell/forget gate
-
-		W = np.concatenate([ortho_weight(options['dim_proj']) for i in range(N)], axis=1)
-		params['%s_W'%(prefix)] = W
-
-		U = np.concatenate([ortho_weight(options['dim_proj']) for i in range(N)], axis=1)
-		params['%s_U'%(prefix)] = U
-
-		b = np.zeros((N * options['dim_proj'],))
-		params['%s_b'%(prefix)] = b.astype(floatX)
-
-		return params
-
-	def lstm_layer(self, tparams, state_below, options, prefix='lstm', mask=None):
-		nsteps = state_below.shape[0]
-		if state_below.ndim == 3:
-			n_samples = state_below.shape[1]
-		else:
-			n_samples = 1
-
-		assert mask is not None
-
-		def _slice(_x, n, dim):
-			if _x.ndim == 3:
-				return _x[:, :, n * dim:(n + 1) * dim]
-			return _x[:, n * dim:(n + 1) * dim]
-
-		def _step(m_, x_, h_, c_):
-			preact = T.dot(h_, tparams['%s_U'%(prefix)])
-			preact += x_
-
-			i = T.nnet.sigmoid(_slice(preact, 0, options['dim_proj']))
-			f = T.nnet.sigmoid(_slice(preact, 1, options['dim_proj']))
-			o = T.nnet.sigmoid(_slice(preact, 2, options['dim_proj']))
-			c = T.tanh(_slice(preact, 3, options['dim_proj']))
-
-			c = f * c_ + i * c
-			c = m_[:, None] * c + (1. - m_)[:, None] * c_
-
-			h = o * T.tanh(c)
-			h = m_[:, None] * h + (1. - m_)[:, None] * h_
-
-			return h, c
-
-		state_below = (T.dot(state_below, tparams['%s_W'%(prefix)]) + tparams['%s_b'%(prefix)])
-
-		dim_proj = options['dim_proj']
-		rval, updates = theano.scan(
-					_step,
-					sequences = [mask, state_below],
-					outputs_info = [
-						T.alloc(np_floatX(0.), n_samples, dim_proj),
-						T.alloc(np_floatX(0.), n_samples, dim_proj)
-						],
-					name = '%s_layers'%(prefix),
-					n_steps = nsteps
-				)
-		return rval[0]
 
 	def build_model(self, tparams, options):
-		trng = RandomStreams(SEED)
 
-		# Used for dropout.
-		# a shared variable, changed in the training process to control whether to use noise or not
-		use_noise = theano.shared(np_floatX(0.))
+		# global flag for dropout
+		flag_dropout = theano.shared(np_floatX(0.))
 
 		# a matrix, whose shape is (n_timestep, n_samples) for theano.scan in training process
-		x = T.matrix('x', dtype='int64')
+		x = T.matrix('x', dtype = 'int64')
 		
 		# a matrix, used to distinguish the valid elements in x
-		mask = T.matrix('mask', dtype=floatX)
+		mask = T.matrix('mask', dtype = floatX)
 
 		# a vector of targets for $n_samples samples   
-		y = T.vector('y', dtype='int64')
+		y = T.vector('y', dtype = 'int64')
 
 		n_timesteps = x.shape[0]
 		n_samples = x.shape[1]
 
 		# transfer x, the matrix of tids, into Wemb, the 'matrix' of embedding vectors 
-		emb = tparams['Wemb'][x.flatten()].reshape([n_timesteps,
-							n_samples,
-							options['dim_proj']])
+		emb = tparams['Wemb'][x.flatten()].reshape(
+				[n_timesteps, n_samples, options['dim_wemb']]
+			)
 
-		# the result of LSTM, a matrix of shape (n_timestep, n_samples, dim_proj)
-		proj = self.lstm_layer(tparams, emb, options, prefix = 'lstm', mask = mask)
+		# the result of LSTM, a matrix of shape (n_timestep, n_samples, dim_hidden)
+		proj = nnfactory.lstm.build_layer(
+				tparams, 'lstm',
+				emb, mask
+			)[0]
+		proj = nnfactory.lstm.postprocess_last(proj)
 
-		# mean pooling, a matrix of shape (n_samples, dim_proj)
-		#proj = (proj * mask[:, :, None]).sum(axis=0)
-		#proj = proj / mask.sum(axis=0)[:, None]
-		proj = proj[-1]
+		proj = nnfactory.dropout.build_layer(proj, flag_dropout)
 
-		# add a dropout layer after mean pooling
+		pred = nnfactory.softmax.build_layer(tparams, 'softmax', proj)
 
-		if options['use_dropout']:
-			proj = dropout_layer(proj, use_noise, trng)
-
-		pred = T.nnet.softmax(T.dot(proj, tparams['U']) + tparams['b'])
-
+		# build functions for prediction
 		f_pred_prob = theano.function([x, mask], pred, name='f_pred_prob')
 		f_pred = theano.function([x, mask], pred.argmax(axis=1), name='f_pred')
 
+		
+		# build function for cost calculation
 		off = 1e-8
 		if pred.dtype == 'float16':
 			off = 1e-6
 
 		cost = -T.log(pred[T.arange(n_samples), y] + off).mean()
 
-
-		return use_noise, x, mask, y, f_pred_prob, f_pred, cost
+		params_input = [x, mask]
+		
+		return flag_dropout, x, mask, y, f_pred_prob, f_pred, cost
 
 	def adadelta(self, lr, tparams, grads, x, mask, y, cost):
 		'''
@@ -287,7 +210,7 @@ class LstmClassifier:
 		load_params(fname_param, params)
 		tparams = init_tparams(params)
 
-		use_noise, x, mask, y, f_pred_prob, f_pred, cost = self.build_model(tparams, model_options)
+		flag_dropout, x, mask, y, f_pred_prob, f_pred, cost = self.build_model(tparams, model_options)
 
 		self.f_pred = f_pred
 		self.f_pred_prob = f_pred_prob
@@ -363,7 +286,6 @@ class LstmClassifier:
 		dataset, Wemb, ydim,
 		
 		# model params		
-		use_dropout = True,
 		reload_model = False,
 		fname_model = None,
 		
@@ -380,29 +302,30 @@ class LstmClassifier:
 
 		# debug params
 		dispFreq = 100,
-	):		
-		optimizer = self.adadelta
-		train, valid, test = dataset
+	):
 
-		# building model
-		print >> sys.stderr, 'train: [info] building model...'
+		# preparing model
+		fname_config = '%s_config.pkl'%(fname_model)
+		fname_param = '%s_param.npz'%(fname_model)
 
-		dim_proj = Wemb.shape[1] # np.ndarray expected
+		# building model		
+		dim_wemb = Wemb.shape[1] # np.ndarray expected
+		dim_hidden = dim_wemb
 
-		model_options = locals().copy()
-		model_options['dim_proj'] = dim_proj
-		
+		# saving configuration of the model
 		model_config = {
 			'ydim':ydim,
-			'dim_proj':dim_proj,
-			'use_dropout':use_dropout,
+			'dim_wemb':dim_wemb,
+			'dim_hidden':dim_hidden,
 			'fname_model':fname_model,
 		}
-		cPickle.dump(model_config, open('%s_config.pkl'%(fname_model), 'wb'), -1) # why -1??
+		cPickle.dump(model_config, open(fname_config, 'wb'), -1) # why -1??
 
+		# preparing options for building model 
+		model_options = locals().copy()
+		model_options['dim_wemb'] = dim_wemb
+		model_options['dim_hidden'] = dim_hidden	
 		params = self.init_params(model_options, Wemb)
-
-		fname_param = '%s_param.npz'%(fname_model)
 
 		if reload_model:
 			if os.path.exists(fname_param):
@@ -416,7 +339,10 @@ class LstmClassifier:
 		
 		tparams = init_tparams(params)
 		
-		use_noise, x, mask, y, f_pred_prob, f_pred, cost = self.build_model(tparams, model_options)
+		# build the model according to the option
+		optimizer = self.adadelta
+
+		flag_dropout, x, mask, y, f_pred_prob, f_pred, cost = self.build_model(tparams, model_options)
 		self.f_pred_prob = f_pred_prob
 		self.f_pred = f_pred
 
@@ -437,6 +363,9 @@ class LstmClassifier:
 
 		lr = T.scalar(name = 'lr')
 		f_grad_shared, f_update = optimizer(lr, tparams, grads, x, mask, y, cost)
+
+		# preparing 
+		train, valid, test = dataset
 
 		kf_valid = get_minibatches_idx(len(valid[0]), valid_batch_size)
 		kf_test = get_minibatches_idx(len(test[0]), valid_batch_size)
@@ -467,7 +396,7 @@ class LstmClassifier:
 				
 				for _, train_index in kf:
 					uidx += 1
-					use_noise.set_value(1.)
+					flag_dropout.set_value(1.)
 
 					x = [train[0][t] for t in train_index]
 					y = [train[1][t] for t in train_index]
@@ -508,7 +437,7 @@ class LstmClassifier:
 						'''
 						check prediction error at %validFreq
 						'''
-						use_noise.set_value(0.)
+						flag_dropout.set_value(0.)
 						
 						print >> sys.stderr, 'train: [info] Validation ....'
 
@@ -547,7 +476,7 @@ class LstmClassifier:
 		else:
 			best_p = unzip(tparams)
 
-		use_noise.set_value(0.)
+		flag_dropout.set_value(0.)
 		
 		kf_train = get_minibatches_idx(len(train[0]), batch_size)
 		train_err = self.pred_error(train, kf_train)
@@ -600,10 +529,8 @@ def main():
 	optparser = OptionParser()
 
 	optparser.add_option('-p', '--prefix', action='store', dest='prefix')
-
 	optparser.add_option('-i', '--input', action='store', dest='key_input')
 	optparser.add_option('-e', '--embed', action='store', dest='key_embed')
-
 	optparser.add_option('-b', '--batch_size', action='store', type='int', dest='batch_size', default = 16)
 
 	opts, args = optparser.parse_args()
@@ -641,15 +568,12 @@ def main():
 			ydim = ydim,
 			fname_model = fname_model,
 			batch_size = opts.batch_size,
-
-			use_dropout = False,
 		)
 
 	test_x, test_y = dataset[2]
-	proba = clf.predict_proba(test_x)
-	cPickle.dump((test_y, proba), open(fname_test, 'w'))
 
-	
+	proba = clf.predict_proba(test_x)
+	cPickle.dump((test_y, proba), open(fname_test, 'w'))	
 
 	prec = precision_at_n(test_y, proba)
 	cPickle.dump(prec, open(fname_prec, 'w'))
