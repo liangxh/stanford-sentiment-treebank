@@ -27,12 +27,9 @@ def init_param(prefix, dim, odim = None):
 		odim = dim
 
 	params = []
-	params.append(('%s_Wxh'%(prefix), ortho_weight(dim, odim)))
-	params.append(('%s_Uhh'%(prefix), ortho_weight(odim, odim)))
-	params.append(('%s_bh'%(prefix), np.zeros((odim,)).astype(floatX)))
-
-	params.append(('%s_Why'%(prefix), ortho_weight(odim, odim)))
-	params.append(('%s_by'%(prefix), np.zeros((odim,)).astype(floatX)))
+	params.append(('%s_W'%(prefix), ortho_weight(dim, odim)))
+	params.append(('%s_U'%(prefix), ortho_weight(odim, odim)))
+	params.append(('%s_b'%(prefix), np.zeros((odim,)).astype(floatX)))
 
 	return params
 
@@ -47,7 +44,7 @@ def build_layer(
 	):
 
 	nsteps = state_below.shape[0]
-	dim_output = tparams['%s_by'%(prefix)].shape[0]
+	dim_output = tparams['%s_b'%(prefix)].shape[0]
 
 	if state_below.ndim == 3:
 		# for parallel computation
@@ -55,7 +52,7 @@ def build_layer(
 	else:
 		n_samples = 1
 
-	def _step(m_, x_, y_, h_):
+	def _step(m_, x_, h_):
 		"""
 		m_: mask
 		x_: main input x
@@ -63,22 +60,17 @@ def build_layer(
 		"""
 
 		#h = T.tanh(x_ + T.dot(h_, tparams['%s_U'%(prefix)]))
-		#h = m_[:, None] * h + (1. - m_)[:, None] * h_ # cover h if m == 1
-
-		h = T.tanh(x_ + T.dot(h_, tparams['%s_Uhh'%(prefix)]))
+		h = T.nnet.sigmoid(x_ + T.dot(h_, tparams['%s_U'%(prefix)]))
 		h = m_[:, None] * h + (1. - m_)[:, None] * h_ # cover h if m == 1
 
-		y = T.dot(h, tparams['%s_Why'%(prefix)]) + tparams['%s_by'%(prefix)]
+		return h
 
-		return y, h
-
-	state_below = T.dot(state_below, tparams['%s_Wxh'%(prefix)]) + tparams['%s_bh'%(prefix)]
+	state_below = T.dot(state_below, tparams['%s_W'%(prefix)]) + tparams['%s_b'%(prefix)]
 
 	rval, updates = theano.scan(
 				_step,
 				sequences = [mask, state_below],
 				outputs_info = [
-					T.alloc(np.asarray(0., dtype = floatX), n_samples, dim_output),
 					T.alloc(np.asarray(0., dtype = floatX), n_samples, dim_output),
 					],
 				name = '%s_layers'%(prefix),
@@ -86,7 +78,7 @@ def build_layer(
 			)
 
 	# hidden state output, memory states
-	return rval[0]
+	return rval
 
 def postprocess_avg(proj, mask):
 	"""
