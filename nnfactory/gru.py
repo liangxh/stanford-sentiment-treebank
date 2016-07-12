@@ -21,11 +21,11 @@ def init_param(prefix, dim, odim = None):
 	params = []
 	params.append((
 			'%s_W'%(prefix),
-			np.concatenate([ortho_weight(dim, odim) for i in range(N)], axis=1)
+			np.concatenate([common.ortho_weight(dim, odim) for i in range(N)], axis=1)
 		))
 	params.append((
 			'%s_U'%(prefix),
-			np.concatenate([ortho_weight(odim, odim) for i in range(N)], axis=1)
+			np.concatenate([common.ortho_weight(odim, odim) for i in range(N)], axis=1)
 		))
 	params.append((
 			'%s_b'%(prefix),
