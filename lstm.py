@@ -153,7 +153,7 @@ class Classifier:
 		if options['decay_c'] > 0.:
 			decay_c = theano.shared(np_floatX(options['decay_c']), name='decay_c')
 			weight_decay = 0.
-			weight_decay += (tparams['U'] ** 2).sum()
+			weight_decay += (tparams['softmax_U'] ** 2).sum()
 			weight_decay *= decay_c
 			cost += weight_decay
 	
