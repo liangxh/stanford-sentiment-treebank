@@ -22,6 +22,6 @@ def ortho_weight(nrow, ncol = None, dtype = floatX):
 	return u[:nrow, :ncol].astype(dtype)
 
 def L2_norm(tparam):
-	return (tparams['U'] ** 2).sum()
+	return (tparam ** 2).sum()
 
 
