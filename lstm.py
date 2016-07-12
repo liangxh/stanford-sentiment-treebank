@@ -254,19 +254,20 @@ class Classifier:
 		dataset, Wemb, 
 		
 		# model params		
+		fname_model,
 		reload_model = False,
-		fname_model = None,
 		
 		# training params
+		decay_c = 0.,
+		lrate = 0.0001,
+		batch_size = 16,
+		dim_hidden = None,
+
+		valid_batch_size = 64,
 		validFreq = 1000,
 		saveFreq = 1000,
 		patience = 10,
 		max_epochs = 5000,
-		decay_c = 0.,
-		lrate = 0.0001,
-		batch_size = 16,
-		valid_batch_size = 64,
-		noise_std = 0., 
 
 		# debug params
 		dispFreq = 100,
@@ -472,8 +473,13 @@ def main():
 	optparser.add_option('-p', '--prefix', action='store', dest='prefix')
 	optparser.add_option('-i', '--input', action='store', dest='key_input')
 	optparser.add_option('-e', '--embed', action='store', dest='key_embed')
-	optparser.add_option('-b', '--batch_size', action='store', type='int', dest='batch_size', default = 16)
 
+	optparser.add_option('-h', '--dim_hidden', action='store', dest='dim_hidden', type='int', default = None)
+	optparser.add_option('-b', '--batch_size', action='store', type='int', dest='batch_size', default = 16)
+	optparser.add_option('-l', '--learning_rate', action='store', type='float', dest='lrate', default = 0.05)
+	optparser.add_option('-c', '--decay_c', action='store', type='float', dest='decay_c', default = 1e-4)
+	
+	
 	opts, args = optparser.parse_args()
 
 	prefix = opts.prefix
@@ -506,7 +512,11 @@ def main():
 			dataset = dataset,
 			Wemb = Wemb,
 			fname_model = fname_model,
+
+			dim_hidden = opts.dim_hidden,
 			batch_size = opts.batch_size,
+			decay_c = opts.decay_c,
+			lrate = opts.lrate,
 		)
 
 	test_x, test_y = dataset[2]

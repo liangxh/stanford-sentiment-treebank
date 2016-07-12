@@ -254,8 +254,8 @@ class Classifier:
 		dataset, Wemb, 
 		
 		# model params		
+		fname_model,
 		reload_model = False,
-		fname_model = None,
 		
 		# training params
 		validFreq = 1000,
@@ -266,7 +266,7 @@ class Classifier:
 		lrate = 0.0001,
 		batch_size = 16,
 		valid_batch_size = 64,
-		noise_std = 0., 
+		dim_hidden = None,
 
 		# debug params
 		dispFreq = 100,
@@ -279,7 +279,9 @@ class Classifier:
 		# building model		
 		ydim = np.max(dataset[0][1]) + 1
 		dim_wemb = Wemb.shape[1] # np.ndarray expected
-		dim_hidden = dim_wemb
+
+		if dim_hidden is None:
+			dim_hidden = dim_wemb
 
 		# saving configuration of the model
 		model_config = {
@@ -472,6 +474,7 @@ def main():
 	optparser.add_option('-p', '--prefix', action='store', dest='prefix')
 	optparser.add_option('-i', '--input', action='store', dest='key_input')
 	optparser.add_option('-e', '--embed', action='store', dest='key_embed')
+	optparser.add_option('-h', '--dim_hidden', action='store', dest='dim_hidden', type='int')
 
 	opts, args = optparser.parse_args()
 
@@ -506,6 +509,7 @@ def main():
 			Wemb = Wemb,
 			fname_model = fname_model,
 
+			dim_hidden = opts.dim_hidden,
 			batch_size = 25,
 			decay_c = 1e-4,
 			lrate = 0.05,
