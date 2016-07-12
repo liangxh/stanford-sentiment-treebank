@@ -5,6 +5,7 @@ Author: Xihao Liang
 Created: 2016.07.12
 '''
 
+import numpy as np
 import theano
 import theano.tensor as T
 floatX = theano.config.floatX
