@@ -11,16 +11,7 @@ import theano
 import theano.tensor as T
 floatX = theano.config.floatX
 
-def ortho_weight(nrow, ncol = None, dtype = floatX):
-	"""
-	initialization of a matrix [nrow x ncol] with orthogonal weight
-	"""
-	dim = nrow if ncol is None else max(nrow, ncol)
-
-	W = np.random.randn(dim, dim)
-	u, s, v = np.linalg.svd(W)
-
-	return u[:nrow, :ncol].astype(dtype)
+import common
 
 def init_param(prefix, dim, odim = None):
 	if odim is None:
@@ -42,6 +33,25 @@ def init_param(prefix, dim, odim = None):
 		))
 
 	return params
+
+'''def get_regularization(
+		tparams,
+		prefix,
+
+		reg_param
+	):
+
+	
+
+	if reg_param > 0.:
+			reg_tparam = theano.shared(np_floatX(reg_param), name='%s_reg')
+			reg = 0.
+			for param_key in ['W', 'U', ]:
+				reg += L2_norm()
+			weight_decay *= decay_c
+
+	return cost
+'''
 
 def build_layer(
 		# data access
@@ -104,4 +114,5 @@ def build_layer(
 
 	# hidden state output, memory states
 	return rval
+
 

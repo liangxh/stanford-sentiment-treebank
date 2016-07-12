@@ -1,0 +1,47 @@
+
+sudo python gru.py -p bingru42b300d -i binary -e binary.glove.42B.300d
+
+* train: [info] precision: train 0.997399 valid 0.836009 test 0.858320
+* train: [info] totally 54 epoches in 7910.6 sec
+
+sudo python gru.py -p bingru6b200d -i binary -e binary.glove.6B.200d
+
+* train: [info] precision: train 0.940318 valid 0.834862 test 0.835255
+* train: [info] totally 51 epoches in 4869.9 sec
+
+sudo python gru.py -p bingru27b200d -i binary -e binary.glove.twitter.27B.200d
+
+* train: [info] precision: train 1.000000 valid 0.830275 test 0.834157
+* train: [info] totally 58 epoches in 5581.3 sec
+
+sudo python gru.py -p bingru6b300d -i binary -e binary.glove.6B.300d
+
+* train: [info] precision: train 0.988584 valid 0.826835 test 0.829764
+* train: [info] totally 51 epoches in 7488.1 sec
+
+sudo python gru.py -p bingru27b100d -i binary -e binary.glove.twitter.27B.100d
+
+* train: [info] precision: train 0.998988 valid 0.822248 test 0.828116
+* train: [info] totally 51 epoches in 1431.7 sec
+
+sudo python gru.py -p bingru27b25d -i binary -e binary.glove.twitter.27B.25d
+
+* train: [info] precision: train 0.950000 valid 0.805046 test 0.825371
+* train: [info] totally 54 epoches in 318.4 sec
+
+sudo python gru.py -p bingru6b100d -i binary -e binary.glove.6B.100d
+
+* train: [info] precision: train 0.909682 valid 0.814220 test 0.820977
+* train: [info] totally 51 epoches in 1486.7 sec
+
+sudo python gru.py -p bingru6b50d -i binary -e binary.glove.6B.50d
+
+* train: [info] precision: train 0.975723 valid 0.808486 test 0.818781
+* train: [info] totally 56 epoches in 707.2 sec
+
+sudo python gru.py -p bingru27b50d -i binary -e binary.glove.twitter.27B.50d
+
+* train: [info] precision: train 0.963584 valid 0.823394 test 0.812191
+* train: [info] totally 56 epoches in 917.0 sec
+
+

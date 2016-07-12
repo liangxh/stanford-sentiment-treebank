@@ -1,0 +1,32 @@
+
+
+sudo python gru.py -p fgrgru6b100d -i finegrain -e finegrain.glove.6B.100d
+
+* train: [info] precision: train 0.588366 valid 0.444142 test 0.457466
+* train: [info] totally 40 epoches in 1562.8 sec
+
+sudo python gru.py -p fgrgru27b200d -i finegrain -e finegrain.glove.twitter.27B.200d
+
+train: [info] precision: train 0.691245 valid 0.440509 test 0.450679
+train: [info] totally 40 epoches in 4585.8 sec
+
+sudo python gru.py -p fgrgru42b300d -i finegrain -e finegrain.glove.42B.300d
+
+train: [info] precision: train 0.577715 valid 0.462307 test 0.447964
+train: [info] totally 42 epoches in 8302.5 sec
+
+sudo python gru.py -p fgrgru6b200d -i finegrain -e finegrain.glove.6B.200d
+
+* train: [info] precision: train 0.656250 valid 0.429609 test 0.443891
+* train: [info] totally 40 epoches in 4424.2 sec
+
+sudo python gru.py -p fgrgru6b300d -i finegrain -e finegrain.glove.6B.300d
+
+* train: [info] precision: train 0.551030 valid 0.438692 test 0.441176
+* train: [info] totally 42 epoches in 7992.1 sec
+
+
+sudo python gru.py -p fgrgru6b50d -i finegrain -e finegrain.glove.6B.50d
+
+* train: [info] precision: train 0.726124 valid 0.423252 test 0.438009
+* train: [info] totally 40 epoches in 740.6 sec

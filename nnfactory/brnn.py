@@ -12,18 +12,7 @@ import theano.tensor as T
 floatX = theano.config.floatX
 
 import rnn
-
-def ortho_weight(nrow, ncol = None, dtype = floatX):
-	"""
-	initialization of a matrix [nrow x ncol] with orthogonal weight
-	"""
-	dim = nrow if ncol is None else max(nrow, ncol)
-
-	W = np.random.randn(dim, dim)
-	u, s, v = np.linalg.svd(W)
-
-	return u[:nrow, :ncol].astype(dtype)
-
+import common
 
 def init_param(rnn_module, prefix, dim, odim = None):
 	if odim is None:
@@ -33,8 +22,8 @@ def init_param(rnn_module, prefix, dim, odim = None):
 	params.extend(rnn_module.init_param('%s_fw'%(prefix), dim, odim))
 	params.extend(rnn_module.init_param('%s_bw'%(prefix), dim, odim))
 
-	params.append(('%s_Wf'%(prefix), ortho_weight(odim, odim)))
-	params.append(('%s_Wb'%(prefix), ortho_weight(odim, odim)))
+	params.append(('%s_Wf'%(prefix), common.ortho_weight(odim, odim)))
+	params.append(('%s_Wb'%(prefix), common.ortho_weight(odim, odim)))
 	params.append(('%s_b'%(prefix), np.zeros((odim,)).astype(floatX)))
 
 	return params
