@@ -21,10 +21,6 @@ floatX = theano.config.floatX
 #theano.config.exception_verbosity = 'high'
 from theano.sandbox.rng_mrg import MRG_RandomStreams as RandomStreams
 
-# Set the random number generators' seeds for consistency
-SEED = 123 
-np.random.seed(SEED)
-
 ###################### Shortcut ######################################
 def np_floatX(data):
 	return np.asarray(data, dtype = floatX)
@@ -479,8 +475,13 @@ def main():
 	optparser.add_option('-l', '--learning_rate', action='store', type='float', dest='lrate', default = 0.05)
 	optparser.add_option('-c', '--decay_c', action='store', type='float', dest='decay_c', default = 1e-4)
 	
+	optparser.add_option('-s', '--default_random_seed', action='store_true', dest='default_seed', default = 'False')
 	
 	opts, args = optparser.parse_args()
+
+	# Set the random number generators' seeds for consistency
+	if opts.default_seed:
+		np.random.seed(123)
 
 	prefix = opts.prefix
 	fname_input = 'data/dataset/' + '%s.pkl'%(opts.key_input)
