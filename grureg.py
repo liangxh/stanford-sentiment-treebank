@@ -474,7 +474,11 @@ def main():
 	optparser.add_option('-p', '--prefix', action='store', dest='prefix')
 	optparser.add_option('-i', '--input', action='store', dest='key_input')
 	optparser.add_option('-e', '--embed', action='store', dest='key_embed')
-	optparser.add_option('-h', '--dim_hidden', action='store', dest='dim_hidden', type='int')
+
+	optparser.add_option('-d', '--dim_hidden', action='store', dest='dim_hidden', type='int', default = None)
+	optparser.add_option('-b', '--batch_size', action='store', type='int', dest='batch_size', default = 16)
+	optparser.add_option('-l', '--learning_rate', action='store', type='float', dest='lrate', default = 0.05)
+	optparser.add_option('-c', '--decay_c', action='store', type='float', dest='decay_c', default = 1e-4)
 
 	opts, args = optparser.parse_args()
 
