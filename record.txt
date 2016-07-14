@@ -1,8 +1,12 @@
-
 sudo python gru.py -p bingru42b300d -i binary -e binary.glove.42B.300d
 
 * train: [info] precision: train 0.997399 valid 0.836009 test 0.858320
 * train: [info] totally 54 epoches in 7910.6 sec
+
+sudo python lstm.py -p binlstm150h42b300d -d 150 -i binary -e binary.glove.42B.300d
+
+* train: [info] precision: train 0.895520 valid 0.836009 test 0.853377
+* train: [info] totally 49 epoches in 12232.4 sec
 
 sudo python gru.py -p bingru6b200d -i binary -e binary.glove.6B.200d
 

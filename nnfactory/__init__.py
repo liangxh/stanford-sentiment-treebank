@@ -6,3 +6,6 @@ import dropout
 import softmax
 import adadelta
 
+
+import lstmmini
+import softmaxmini

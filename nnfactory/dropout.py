@@ -10,10 +10,13 @@ import numpy as np
 import theano
 import theano.tensor as T
 floatX = theano.config.floatX
-from theano.sandbox.rng_mrg import MRG_RandomStreams as RandomStreams
+from theano.sandbox.rng_mrg import MRG_RandomStreams
 
-def build_layer(state_before, flag, rate = 0.5, random_seed = None):
-	trng = RandomStreams(default_seed) if random_seed is not None else RandomStreams()
+import time
+default_seed = int(time.time() * 1e6) % 2147462579
+
+def build_layer(state_before, flag, rate = 0.5):
+	trng = MRG_RandomStreams(default_seed)
 
 	proj = T.switch(
 			flag,
