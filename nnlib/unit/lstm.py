@@ -13,7 +13,7 @@ floatX = theano.config.floatX
 
 import common
 
-def build_layer(tparams, prefix, state_before, mask, dim, odim = None):
+def build(tparams, prefix, state_before, mask, dim, odim = None):
 	if odim is None:
 		odim = dim
 
