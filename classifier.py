@@ -18,10 +18,6 @@ import numpy as np
 import theano
 floatX = theano.config.floatX
 
-import nltk
-from wordembedder import WordEmbedder
-
-import nnlib
 
 def update_tparams(tparams, params):
 	'''
@@ -56,24 +52,17 @@ class Classifier:
 	def __init__(self):
 		pass
 
-	def predict_error(self, data, iterator = None):
-		data_x = data[0]
-		data_y = np.array(data[1])
-		err = 0
+	def predict_proba(self, seq):
+		def _predict(seqs):
+			x, x_mask = self.prepare_x(seqs)
 
-		if iterator is None:
-			iterator = get_minibatches_idx(len(data[0]), 32)
+			return self.f_pred_prob(x, x_mask)
 
-		for _, valid_index in iterator:
-			x, mask = self.prepare_x([data_x[t] for t in valid_index])
-			y = data_y[valid_index]
+		seqs = [seq, ]
+		proba = _predict(seqs)
 
-			preds = self.f_pred(x, mask)
-			err += (preds == y).sum()
-			
-		err = 1. - float(err) / len(data[0])
+		return proba[0]
 
-		return err
 
 	def prepare_x(self, seqs):
 		'''
@@ -109,6 +98,12 @@ class Classifier:
 
 		return params
 
+
+import nltk
+from wordindexer import WordIndexer
+
+import nnlib
+
 def main():
 	optparser = OptionParser()
 
@@ -122,27 +117,20 @@ def main():
 	prefix = opts.prefix
 	fname_input = 'data/dataset/' + '%s.pkl'%(opts.key_input)
 	fname_embed = 'data/wemb/' + '%s.txt'%(opts.key_embed)
-
 	fname_model = 'data/model/' + '%s'%(prefix)
-	fname_test = 'data/test/' + '%s_test.pkl'%(prefix)
-	fname_prec = 'data/test/' + '%s_prec.pkl'%(prefix)
 
-	dataset = cPickle.load(open(fname_input, 'r'))
-	wembedder = WordEmbedder.load(fname_embed)
-
-	def preprocess_text(wembedder, xy):
-		texts, y = xy
-		seqs = [nltk.word_tokenize(t.lower()) for t in texts]
-		idxs = [wembedder.seq2idx(seq) for seq in seqs]
-
-		return (idxs, y)
+	windexer = WordIndexer.load(fname_embed)
 	
-	test = preprocess_text(wembedder, dataset[2])
-
 	clf = Classifier()
 	clf.load_model(fname_model)
 
-	print 1. - clf.predict_error(test)
+	s = 'hello, how are you?'
+	seq = nltk.word_tokenize(s.lower())
+	idx = windexer.seq2idx(seq)
+	
+	res = clf.predict_proba(idx)
+	print res
+	
 
 if __name__ == '__main__':
 	main()
