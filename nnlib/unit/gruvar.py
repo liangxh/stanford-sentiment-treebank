@@ -49,12 +49,13 @@ def build(tparams, prefix, state_before, mask, dim, odim = None):
 		"""
 
 		preact = T.dot(h_, tparams['%s_U'%(prefix)])
-		
-		z = T.nnet.sigmoid(_slice(preact, 0, odim) + _slice(x_, 0, odim))
-		r = T.nnet.sigmoid(_slice(preact, 1, odim) + _slice(x_, 1, odim))
-		g = T.tanh(_slice(preact, 2, odim) * r + _slice(x_, 2, odim))
-		h = (- z + 1) * h_ + z * g
+		preact += x_
 
+		i = T.nnet.sigmoid(_slice(preact, 0, odim))
+		f = T.nnet.sigmoid(_slice(preact, 1, odim))
+		g = T.tanh(_slice(preact, 2, odim))
+
+		h = T.tanh(i * g + f * h_)
 		h = m_[:, None] * h + (1. - m_)[:, None] * h_ # cover h if m == 1
 
 		return h

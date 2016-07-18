@@ -65,20 +65,6 @@ class Classifier:
 	def __init__(self):
 		pass
 
-	def load_model(self, fname_model):
-		fname_config = '%s_config.pkl'%(fname_model)
-		fname_param = '%s_param.npz'%(fname_model)
-
-		model_config = cPickle.load(open(fname_config, 'r'))
-
-		tparams, self.f_pred, self.f_pred_prob, \
-			f_grad_shared, f_update, flag_dropout = self.build_model(model_config)
-
-		params = np.load(fname_param)
-		update_tparams(tparams, params)
-
-		return params
-
 	def predict_proba(self, seqs, batch_size = 64):
 
 		def _predict(seqs):
