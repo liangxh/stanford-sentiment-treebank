@@ -14,7 +14,7 @@ import time
 np.random.seed(int(time.time() * 1e6) % (1 << 32))
 
 def rand_weight(shape, dtype = floatX):
-	return 0.1 * np.random.randn(* shape).astype(floatX)
+	return 0.1 * np.random.randn(* shape).astype(dtype)
 
 def ortho_weight(nrow, ncol = None, dtype = floatX):
 	"""
