@@ -1,25 +1,11 @@
-import lstm
-import gru
-import rnn
-import brnn
-import blstm
-import grurnn
-import lstm2l
+import importlib
 
-models = {
-	'lstm':lstm,
-	'gru':gru,
-	'rnn':rnn,
-	'brnn':brnn,
-	'blstm':blstm,
-	'grurnn':grurnn,
-	'lstm2l':lstm2l,
-	}
+_prefix = 'nnlib.model.'
 
 def get(name):
-	model = models.get(name, None)
-
-	if model is not None:
+	try:
+		model = __import__(_prefix + name, fromlist=[''])
 		return model
-	else:
+	except:
 		raise Warning('model %s not found'%(name))
+		
