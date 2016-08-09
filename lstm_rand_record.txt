@@ -1,9 +1,0 @@
-train: [info] precision: train 0.995954 valid 0.815367 test 0.816584
-train: [info] totally 70 epoches in 670.4 sec
-anonymous@Acer:~/Documents/sentitree$ ./test.sh lstmmini
-
-train: [info] precision: train 0.992775 valid 0.797018 test 0.811642
-train: [info] totally 56 epoches in 502.8 sec
-
-train: [info] precision: train 0.950289 valid 0.817661 test 0.820428
-train: [info] totally 56 epoches in 517.1 sec
