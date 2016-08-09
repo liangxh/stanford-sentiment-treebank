@@ -41,7 +41,7 @@ def build(tparams, prefix, state_before, mask, dim, odim = None):
 
 		return _x[:, n * dim:(n + 1) * dim]
 
-	def _step(x_, xw_, m_, w_, h_, c_):
+	def _step(x_, m_, h_, c_):
 		"""
 		m_: mask
 		x_: main input x
@@ -49,7 +49,7 @@ def build(tparams, prefix, state_before, mask, dim, odim = None):
 		c_: memory in the cell from the last loop
 		"""
 
-		preact = T.dot(h_, tparams['%s_U'%(prefix)]) + w_
+		preact = T.dot(h_, tparams['%s_U'%(prefix)])
 		preact += x_
 
 		i = T.nnet.sigmoid(_slice(preact, 0, odim))
@@ -63,16 +63,21 @@ def build(tparams, prefix, state_before, mask, dim, odim = None):
 		h = o * T.tanh(c)
 		h = m_[:, None] * h + (1. - m_)[:, None] * h_ # cover h if m == 1
 
-		return xw_, h, c
+		return h, c
 
-	proj = (T.dot(state_before, tparams['%s_W'%(prefix)]) + tparams['%s_b'%(prefix)])
-	proj_w = T.dot(state_before, tparams['%s_V'%(prefix)])
+	state_last = T.concatenate(
+			[T.alloc(np.asarray(0., dtype = floatX), 1, n_samples, odim), state_before[:-1, :, :]],
+			axis = 0
+			)
+	
+	proj = T.dot(state_before, tparams['%s_W'%(prefix)]) + \
+		T.dot(state_last, tparams['%s_V'%(prefix)]) + \
+		tparams['%s_b'%(prefix)])
 
 	rval, updates = theano.scan(
 				_step,
-				sequences = [proj, proj_w, mask],
+				sequences = [proj, mask],
 				outputs_info = [
-					T.alloc(np.asarray(0., dtype = floatX), n_samples, odim),
 					T.alloc(np.asarray(0., dtype = floatX), n_samples, odim),
 					T.alloc(np.asarray(0., dtype = floatX), n_samples, odim)
 					],
