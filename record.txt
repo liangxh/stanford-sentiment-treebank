@@ -1,5 +1,7 @@
 sudo python train_model.py -m wlstm -p wlstm42b300d -i binary -e binary.glove.42B.300d
 
+sudo python train_model.py -m blstmsNmax -p blstmsNmax42b300d -i binary -e binary.glove.42B.300d
+
 
 sudo python gru.py -p bingru42b300d -i binary -e binary.glove.42B.300d
 
