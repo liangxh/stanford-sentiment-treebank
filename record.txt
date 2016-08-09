@@ -1,3 +1,6 @@
+sudo python train_model.py -m wlstm -p wlstm42b300d -i binary -e binary.glove.42B.300d
+
+
 sudo python gru.py -p bingru42b300d -i binary -e binary.glove.42B.300d
 
 * train: [info] precision: train 0.997399 valid 0.836009 test 0.858320
