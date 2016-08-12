@@ -18,7 +18,6 @@ import numpy as np
 import theano
 floatX = theano.config.floatX
 
-
 def update_tparams(tparams, params):
 	'''
 	set values for tparams using params
