@@ -26,8 +26,10 @@ def build_layer(tparams, prefix, state_before, dim, odim = None, N = 2):
 	for name, value in params:
 		tparams[name] = theano.shared(value, name = name)
 
+	n_samples = state_before.shape[0]
+
 	proj = T.dot(state_before, tparams['%s_U'%(prefix)]) + tparams['%s_b'%(prefix)]
-	proj = proj.reshape([odim, N])
-	proj = T.max(proj, axis = 1)
+	proj = proj.reshape([n_samples, odim, N])
+	proj = T.max(proj, axis = 2)
 
 	return T.nnet.softmax(proj)
