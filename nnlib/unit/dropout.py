@@ -23,7 +23,7 @@ def build_layer(state_before, flag, rate = 0.5):
 			(state_before
 				* trng.binomial(
 					state_before.shape,
-					p = 1. - rate,
+					p = rate,
 					dtype = state_before.dtype
 					)
 			),

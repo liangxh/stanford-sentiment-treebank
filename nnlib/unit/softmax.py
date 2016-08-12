@@ -19,13 +19,13 @@ def build_layer(tparams, prefix, state_before, dim, odim = None):
 		odim = dim
 
 	params = [
-		('%s_U'%(prefix), common.ortho_weight(dim, odim, floatX)),
+		('%s_W'%(prefix), common.ortho_weight(dim, odim, floatX)),
 		('%s_b'%(prefix), common.rand_weight((odim, ), floatX)),
 		]
 
 	for name, value in params:
 		tparams[name] = theano.shared(value, name = name)
 
-	return T.nnet.softmax(T.dot(state_before, tparams['%s_U'%(prefix)]) + tparams['%s_b'%(prefix)])
+	return T.nnet.softmax(T.dot(state_before, tparams['%s_W'%(prefix)]) + tparams['%s_b'%(prefix)])
 
 	

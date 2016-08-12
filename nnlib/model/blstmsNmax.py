@@ -57,7 +57,7 @@ def build(options):
 	if options['decay_c'] > 0.:
 		decay_c = theano.shared(np.asarray(options['decay_c'], dtype = floatX), name='decay_c')
 		weight_decay = 0.
-		weight_decay += (tparams['softNmax_U'] ** 2).sum()
+		weight_decay += (tparams['softNmax_W'] ** 2).sum()
 		weight_decay *= decay_c
 		cost += weight_decay
 	

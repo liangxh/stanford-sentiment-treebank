@@ -72,7 +72,7 @@ def build(tparams, prefix, state_before, mask, dim, odim = None):
 	
 	proj = T.dot(state_before, tparams['%s_W'%(prefix)]) + \
 		T.dot(state_last, tparams['%s_V'%(prefix)]) + \
-		tparams['%s_b'%(prefix)])
+		tparams['%s_b'%(prefix)]
 
 	rval, updates = theano.scan(
 				_step,
