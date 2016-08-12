@@ -19,7 +19,7 @@ def build_layer(tparams, prefix, state_before, dim, odim = None, N = 2):
 		odim = dim
 
 	params = [
-		('%s_U'%(prefix), common.ortho_weight(dim, odim * N, floatX)),
+		('%s_W'%(prefix), common.ortho_weight(dim, odim * N, floatX)),
 		('%s_b'%(prefix), common.rand_weight((odim * N, ), floatX)),
 		]
 
@@ -28,7 +28,7 @@ def build_layer(tparams, prefix, state_before, dim, odim = None, N = 2):
 
 	n_samples = state_before.shape[0]
 
-	proj = T.dot(state_before, tparams['%s_U'%(prefix)]) + tparams['%s_b'%(prefix)]
+	proj = T.dot(state_before, tparams['%s_W'%(prefix)]) + tparams['%s_b'%(prefix)]
 	proj = proj.reshape([n_samples, odim, N])
 	proj = T.max(proj, axis = 2)
 

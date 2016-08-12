@@ -18,14 +18,15 @@ import numpy as np
 import theano
 floatX = theano.config.floatX
 
-
 def update_tparams(tparams, params):
 	'''
 	set values for tparams using params
 	'''
-	for name, value in params.iteritems():
-		if name in tparams:
-			tparams[name].set_value(value)
+	for name, value in tparams.iteritems():
+		if not name in params:
+			raise Warning('param %s not found'%(name))
+
+		tparams[name].set_value(params[name])
 
 def get_minibatches_idx(n, minibatch_size, shuffle=False):
 	'''
