@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 '''
 Author: Xihao Liang
-Created: 2016.07.09
+Created: 2016.08.30
 '''
 
 import os
@@ -19,26 +19,6 @@ np.random.seed(int(time.time() * 1e6) % (1 << 32))
 
 import theano
 floatX = theano.config.floatX
-
-def get_params(tparams):
-	'''
-	get value from tparams to an OrderedDict for saving
-	'''
-	params = OrderedDict()
-	for name, value in tparams.iteritems():
-		params[name] = value.get_value()
-
-	return params
-
-def update_tparams(tparams, params):
-	'''
-	set values for tparams using params
-	'''
-	for name, value in tparams.iteritems():
-		if not name in params:
-			raise Warning('param %s not found'%(name))
-
-		tparams[name].set_value(params[name])
 
 def get_minibatches_idx(n, minibatch_size, shuffle=False):
 	'''
@@ -63,7 +43,7 @@ def get_minibatches_idx(n, minibatch_size, shuffle=False):
 
 import nnlib
 
-class Classifier:
+class ModelTrainer:
 	def __init__(self):
 		pass
 
@@ -72,7 +52,7 @@ class Classifier:
 		def _predict(seqs):
 			x, x_mask = self.prepare_x(seqs)
 
-			return self.f_pred_prob(x, x_mask)
+			return self.model.predict(x, x_mask)
 
 		if not isinstance(seqs[0], list):
 			seqs = [seqs, ]
@@ -101,8 +81,8 @@ class Classifier:
 			x, mask = self.prepare_x([data_x[t] for t in valid_index])
 			y = data_y[valid_index]
 
-			preds = self.f_pred(x, mask)
-			err += (preds == y).sum()
+			preds = self.model.predict(x, mask)
+			err += (np.argmax(preds, axis = 1) == y).sum()
 			
 		err = 1. - float(err) / len(data[0])
 
@@ -138,13 +118,13 @@ class Classifier:
 		
 		# training params
 		decay_c = 0.,
-		lrate = 0.0001,
+		learning_rate = 0.0001,
 		batch_size = 16,
 		dim_hidden = None,
 
 		valid_batch_size = 64,
-		validFreq = 1000,
-		saveFreq = 1000,
+		validFreq = 100,
+		saveFreq = 100,
 		patience = 10,
 		max_epochs = 5000,
 
@@ -175,6 +155,7 @@ class Classifier:
 				'dim_hidden':dim_hidden,
 				'decay_c':decay_c,
 			}
+
 			cPickle.dump(model_config, open(fname_config, 'wb'), -1) # why -1??
 			print >> sys.stderr, 'train: [info] model configuration saved in %s'%(fname_config)
 		else:
@@ -183,11 +164,8 @@ class Classifier:
 		# preparing functions for training
 		print >> sys.stderr, 'train: [info] building model...'
 
-		model = nnlib.model.get(model_config['model_name'])
-
-		tparams, self.f_pred, self.f_pred_prob, \
-			f_grad_shared, f_update, flag_dropout = model.build(model_config)
-
+		self.model = nnlib.model.get(model_config['model_name'])
+		self.model.build(model_config)
 
 		history_errs = []
 		best_p = None
@@ -199,15 +177,15 @@ class Classifier:
 				print >> sys.stderr, 'train: [warning] Wemb is required for training'%(fname_param)
 				return None
 			else:
-				tparams['Wemb'].set_value(Wemb)
+				self.model.load_value('Wemb', Wemb)
 		else:
 			if not os.path.exists(fname_param):
 				print >> sys.stderr, 'train: [warning] model %s not found'%(fname_param)
 				return None
 			else:
 				params = np.load(fname_param)
-				update_tparams(tparams, params)
-				best_p = get_params(tparams)
+				self.model.update_tparams(params)
+				best_p = self.model.get_params()
 				
 				if 'history_errs' in params:
 					history_errs = params['history_errs'].tolist()
@@ -233,15 +211,13 @@ class Classifier:
 				
 				for _, train_index in kf:
 					uidx += 1
-					flag_dropout.set_value(1.)
-
+					
 					x = [train[0][t] for t in train_index]
 					y = [train[1][t] for t in train_index]
 
 					x, mask = self.prepare_x(x)
 
-					cost = f_grad_shared(x, mask, y)
-					f_update(lrate)
+					cost = self.model.train([x, mask], y, learning_rate)
 					
 					if np.isnan(cost) or np.isinf(cost):
 						'''
@@ -260,7 +236,7 @@ class Classifier:
 						'''
 						check prediction error at %validFreq
 						'''
-						flag_dropout.set_value(0.)
+						#flag_dropout.set_value(0.)
 						
 						print >> sys.stderr, 'train: [info] validation'
 
@@ -275,7 +251,7 @@ class Classifier:
 							'''
 							update best_p if params perform the best so far
 							'''
-							best_p = get_params(tparams)
+							best_p = self.model.get_params()
 							best_p_updated = True
 							bad_count = 0
 						
@@ -314,11 +290,11 @@ class Classifier:
 
 		# evaluate the model over the whole dataset
 		if best_p is not None:
-			update_tparams(tparams, best_p)
+			self.model.update_tparams(best_p)
 		else:
-			best_p = get_params(tparams)
+			best_p = self.model.get_params()
 
-		flag_dropout.set_value(0.)
+		#flag_dropout.set_value(0.)
 		
 		kf_train = get_minibatches_idx(len(train[0]), batch_size)
 		train_err = self.predict_error(train, kf_train)
@@ -338,8 +314,6 @@ class Classifier:
 			history_errs = history_errs,
 			**best_p
 			)
-
-		self.tparams = tparams
 
 		return train_err, valid_err, test_err
 
@@ -376,7 +350,7 @@ def main():
 
 	optparser.add_option('-d', '--dim_hidden', action='store', dest='dim_hidden', type='int', default = None)
 	optparser.add_option('-b', '--batch_size', action='store', type='int', dest='batch_size', default = 16)
-	optparser.add_option('-l', '--learning_rate', action='store', type='float', dest='lrate', default = 0.05)
+	optparser.add_option('-l', '--learning_rate', action='store', type='float', dest='learning_rate', default = 0.05)
 	optparser.add_option('-c', '--decay_c', action='store', type='float', dest='decay_c', default = 1e-4)
 	
 	opts, args = optparser.parse_args()
@@ -409,9 +383,9 @@ def main():
 		Wemb = None
 
 	print >> sys.stderr, 'main: [info] start training'
-	clf = Classifier()
 
-	res = clf.train(
+	mtrainer = ModelTrainer()
+	res = mtrainer.train(
 			dataset = dataset,
 			Wemb = Wemb,
 
@@ -422,12 +396,12 @@ def main():
 			dim_hidden = opts.dim_hidden,
 			batch_size = opts.batch_size,
 			decay_c = opts.decay_c,
-			lrate = opts.lrate,
+			learning_rate = opts.learning_rate,
 		)
 
 	test_x, test_y = dataset[2]
 
-	proba = clf.predict_proba(test_x)
+	proba = mtrainer.predict_proba(test_x)
 	cPickle.dump((test_y, proba), open(fname_test, 'w'))	
 
 	prec = precision_at_n(test_y, proba)

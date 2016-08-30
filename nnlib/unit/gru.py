@@ -11,26 +11,28 @@ import theano
 import theano.tensor as T
 floatX = theano.config.floatX
 
-import common
+from nnlib.common import State, initializer
 
-def build(tparams, prefix, state_before, mask, dim, odim = None):
+def build(tparams, prefix, state_before, mask, odim = None):
+	dim = state_before.odim
+
 	if odim is None:
 		odim = dim
 
 	N = 3
 	params = [
-		('%s_W'%(prefix), np.concatenate([common.ortho_weight(dim, odim) for i in range(N)], axis=1)),
-		('%s_U'%(prefix), np.concatenate([common.ortho_weight(odim, odim) for i in range(N)], axis=1)),
-		('%s_b'%(prefix), np.zeros((N * odim,)).astype(floatX)),
+		('%s_W'%(prefix), np.concatenate([initializer.weight_orthogonal(dim, odim) for i in range(N)], axis=1)),
+		('%s_U'%(prefix), np.concatenate([initializer.weight_orthogonal(odim, odim) for i in range(N)], axis=1)),
+		('%s_b'%(prefix), initializer.bias(N * odim)),
 		]
 
 	for name, value in params:
 		tparams[name] = theano.shared(value, name = name)
 
-	nsteps = state_before.shape[0]
+	nsteps = state_before.var.shape[0]
 
-	if state_before.ndim == 3:
-		n_samples = state_before.shape[1]
+	if state_before.var.ndim == 3:
+		n_samples = state_before.var.shape[1]
 	else:
 		n_samples = 1
 
@@ -59,11 +61,11 @@ def build(tparams, prefix, state_before, mask, dim, odim = None):
 
 		return h
 
-	proj = T.dot(state_before, tparams['%s_W'%(prefix)]) + tparams['%s_b'%(prefix)]
+	var = T.dot(state_before.var, tparams['%s_W'%(prefix)]) + tparams['%s_b'%(prefix)]
 
 	rval, updates = theano.scan(
 				_step,
-				sequences = [proj, mask],
+				sequences = [var, mask],
 				outputs_info = [
 					T.alloc(np.asarray(0., dtype = floatX), n_samples, odim),
 					],
@@ -72,6 +74,6 @@ def build(tparams, prefix, state_before, mask, dim, odim = None):
 			)
 
 	# hidden state output, memory states
-	return rval
+	return State(rval, odim)
 
 

@@ -1,9 +1,11 @@
+import embedding
+import linear_combo
+
+import dropout
+import maxout
+
 import rnn
-import brnn
 import gru
 import lstm
-import softmax
-import dropout
+import brnn
 
-import softNmax
-import wlstm

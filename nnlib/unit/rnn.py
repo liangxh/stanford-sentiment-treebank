@@ -11,25 +11,27 @@ import theano
 import theano.tensor as T
 floatX = theano.config.floatX
 
-import common
+from nnlib.common import State, initializer
 
-def build(tparams, prefix, state_before, mask, dim, odim = None):
+def build(tparams, prefix, state_before, mask, odim = None):
+	dim = state_before.odim
+
 	if odim is None:
 		odim = dim
 
 	params = [
-		('%s_W'%(prefix), common.ortho_weight(dim, odim)),
-		('%s_U'%(prefix), common.ortho_weight(odim, odim)),
-		('%s_b'%(prefix), common.rand_weight((odim,), floatX)),
+		('%s_W'%(prefix), initializer.weight_orthogonal(dim, odim)),
+		('%s_U'%(prefix), initializer.weight_orthogonal(odim, odim)),
+		('%s_b'%(prefix), initializer.bias(odim)),
 		]
 	
 	for name, value in params:
 		tparams[name] = theano.shared(value, name = name)
 
-	nsteps = state_before.shape[0]
+	nsteps = state_before.var.shape[0]
 	
-	if state_before.ndim == 3:
-		n_samples = state_before.shape[1]
+	if state_before.var.ndim == 3:
+		n_samples = state_before.var.shape[1]
 	else:
 		n_samples = 1
 
@@ -46,11 +48,11 @@ def build(tparams, prefix, state_before, mask, dim, odim = None):
 
 		return h
 
-	proj = T.dot(state_before, tparams['%s_W'%(prefix)]) + tparams['%s_b'%(prefix)]
+	var = T.dot(state_before.var, tparams['%s_W'%(prefix)]) + tparams['%s_b'%(prefix)]
 
 	rval, updates = theano.scan(
 				_step,
-				sequences = [proj, mask],
+				sequences = [var, mask],
 				outputs_info = [
 					T.alloc(np.asarray(0., dtype = floatX), n_samples, odim),
 					],
@@ -59,9 +61,9 @@ def build(tparams, prefix, state_before, mask, dim, odim = None):
 			)
 
 	# hidden state output, memory states
-	return rval
+	return State(rval, odim)
 
-def postprocess_avg(proj, mask):
+def postprocess_avg(state_before, mask):
 	"""
 	mean pooling
 	
@@ -69,17 +71,17 @@ def postprocess_avg(proj, mask):
 	mask: a matrix of size [n_step, n_samples]
 	"""
 
-	proj = (proj * mask[:, :, None]).sum(axis=0)
-	proj = proj / mask.sum(axis=0)[:, None]
+	var = (state_before.var * mask[:, :, None]).sum(axis=0)
+	var = var / mask.sum(axis=0)[:, None]
 
-	return proj
+	return State(var, state_before.odim)
 
-def postprocess_last(proj):
+def postprocess_last(state_before):
 	"""
 	keep only the last hidden state
 	
 	proj: a matrix of size [n_step, n_samples, dim_proj]
 	"""
 
-	return proj[-1]
+	return state_before.map(lambda k:k[-1])
 

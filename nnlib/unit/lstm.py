@@ -6,31 +6,35 @@ Created: 2016.07.08
 Description: a factory for building the Long Short Term Memory (LSTM) layer
 '''
 
+from nnlib.common.state import State
+
 import numpy as np
 import theano
 import theano.tensor as T
 floatX = theano.config.floatX
 
-import common
+from nnlib.common import State, initializer
 
-def build(tparams, prefix, state_before, mask, dim, odim = None):
+def build(tparams, prefix, state_before, mask, odim = None):
+	dim = state_before.odim
+
 	if odim is None:
 		odim = dim
 
 	N = 4
 	params = [
-		('%s_W'%(prefix), np.concatenate([common.ortho_weight(dim, odim) for i in range(N)], axis=1)),
-		('%s_U'%(prefix), np.concatenate([common.ortho_weight(odim, odim) for i in range(N)], axis=1)),
-		('%s_b'%(prefix), common.rand_weight((N * odim, ), floatX)),
+		('%s_W'%(prefix), np.concatenate([initializer.weight_orthogonal(dim, odim) for i in range(N)], axis=1)),
+		('%s_U'%(prefix), np.concatenate([initializer.weight_orthogonal(odim, odim) for i in range(N)], axis=1)),
+		('%s_b'%(prefix), initializer.bias(N * odim)),
 		]
 
 	for name, value in params:
 		tparams[name] = theano.shared(value, name = name)
 
-	nsteps = state_before.shape[0]
+	nsteps = state_before.var.shape[0]
 	
-	if state_before.ndim == 3:
-		n_samples = state_before.shape[1]
+	if state_before.var.ndim == 3:
+		n_samples = state_before.var.shape[1]
 	else:
 		n_samples = 1
 
@@ -64,19 +68,20 @@ def build(tparams, prefix, state_before, mask, dim, odim = None):
 
 		return h, c
 
-	proj = (T.dot(state_before, tparams['%s_W'%(prefix)]) + tparams['%s_b'%(prefix)])
+	var = (T.dot(state_before.var, tparams['%s_W'%(prefix)]) + tparams['%s_b'%(prefix)])
 
 	rval, updates = theano.scan(
 				_step,
-				sequences = [proj, mask],
+				sequences = [var, mask],
 				outputs_info = [
+					# hidden state
 					T.alloc(np.asarray(0., dtype = floatX), n_samples, odim),
+					# memory cell
 					T.alloc(np.asarray(0., dtype = floatX), n_samples, odim)
 					],
 				name = '%s_layers'%(prefix),
 				n_steps = nsteps
 			)
 
-	# hidden state output, memory states
-	return rval[0]
+	return State(rval[0], odim)
 

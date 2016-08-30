@@ -11,10 +11,10 @@ import theano
 import theano.tensor as T
 floatX = theano.config.floatX
 
-def build(lr, tparams, grads, inputs, y, cost):
+def build(lr, tparams, grads, inputs, output, cost):
 	grad_inputs = []
 	grad_inputs.extend(inputs)
-	grad_inputs.append(y)
+	grad_inputs.append(output)
 
 	zipped_grads = [theano.shared(p.get_value() * np.asarray(0., dtype = floatX), name = '%s_grad' % k)
 					for k, p in tparams.iteritems()]
