@@ -23,7 +23,7 @@ def main():
 
 	if flag:
 		print '[info] %s found in %s'%(key_old, fname)
-		commands.getoutput('rm %s'%(fname))
+		commands.getoutput('rm -f %s'%(fname))
 		np.savez(fname, **new_params)
 	else:
 		print '[info] %s not found in %s'%(key_old, fname)
