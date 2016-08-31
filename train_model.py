@@ -13,6 +13,9 @@ import nltk
 import cPickle
 from optparse import OptionParser
 
+import import_path
+sys.path.append(import_path.nnlib)
+
 import nnlib
 from nnlib.app import Trainer
 from nnlib.common.dataset import DataSet, DataPair
