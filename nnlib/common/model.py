@@ -67,6 +67,9 @@ class Model:
 							)
 
 	def train(self, inputs, output, learning_rate):
+		if isinstance(inputs, tuple):
+			inputs = list(inputs)
+
 		if not isinstance(inputs, list):
 			inputs = [inputs, ]
 		

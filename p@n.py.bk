@@ -1,0 +1,40 @@
+def predict_proba(self, seqs, batch_size = 64):
+
+	def _predict(seqs):
+		return self.model.predict(self.input_adapt(seqs))
+
+	if not isinstance(seqs[0], list):
+		seqs = [seqs, ]
+		proba = _predict(seqs)
+
+		return proba[0]
+	else:
+		kf = get_minibatches_idx(len(seqs), batch_size)
+		proba = []
+
+		for _, idx in kf:
+			proba.extend(_predict(np.asarray([seqs[i] for i in idx])))
+			
+		proba = np.asarray(proba)
+		return proba
+
+
+
+def precision_at_n(ys, pred_probs):
+	n_test = len(ys)
+	y_dim = len(pred_probs[0])
+	hit = [0 for i in range(y_dim)]
+
+	for y, probs in zip(ys, pred_probs):
+		eid_prob = sorted(enumerate(probs), key = lambda k:-k[1])
+
+		for i, item in enumerate(eid_prob):
+			eid, progs = item
+			if y == eid:
+				hit[i] += 1
+
+	for i in range(1, y_dim):
+		hit[i] += hit[i - 1]
+
+	prec = [float(hi) / n_test for hi in hit]
+	return prec
