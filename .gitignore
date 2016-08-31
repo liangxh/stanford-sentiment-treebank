@@ -1,4 +1,5 @@
 data/*
 backup/*
+import_path.py
 *.pyc
 *~
